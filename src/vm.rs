@@ -13,6 +13,7 @@ enum Opcode {
     ADD,
     SUBSTRACT,
     MULTIPLY,
+    DIVIDE,
     PRINT,
 }
 
@@ -23,7 +24,8 @@ impl Opcode {
             0x01 => Some(Opcode::ADD),
             0x02 => Some(Opcode::SUBSTRACT),
             0x03 => Some(Opcode::MULTIPLY),
-            0x04 => Some(Opcode::PRINT),
+            0x04 => Some(Opcode::DIVIDE),
+            0x05 => Some(Opcode::PRINT),
             _    => None
         }
     }
@@ -46,14 +48,14 @@ impl VM {
         };
 
         while vm.index < bytecode.len() {
-            println!("Stack 1...10: {:?}", &vm.stack[0..9]);
+            println!("Stack 1...10: {:?}", &vm.stack[0..9]); // Debug
+
             let opcode = vm.read();
             vm.execute(opcode);
             vm.next();
         }
 
-        // Debug
-        println!("Stack 1...10: {:?}", &vm.stack[0..9])
+        println!("Stack 1...10: {:?}", &vm.stack[0..9]) // Debug
     }
 
     fn execute(&mut self, opcode: Opcode) {
@@ -65,6 +67,7 @@ impl VM {
             Opcode::ADD => { binary_op!(self, +) },
             Opcode::SUBSTRACT => { binary_op!(self, -) },
             Opcode::MULTIPLY => { binary_op!(self, *) },
+            Opcode::DIVIDE => { binary_op!(self, /) },
             Opcode::PRINT => { println!("{}", self.pop()) },
         }
     }
@@ -76,7 +79,7 @@ impl VM {
         self.bytecode[self.index] as i8
     }
 
-    fn next(&mut self) -> &VM {
+    fn next(&mut self) -> &Self {
         self.index += 1;
         self
     }
