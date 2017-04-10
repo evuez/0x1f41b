@@ -1,4 +1,5 @@
 use nom::be_i8;
+use std::str;
 
 #[derive(Debug)]
 enum OpType {
@@ -27,16 +28,21 @@ struct Assignment {
     value: Expression
 }
 
-named!(store(&str) -> Assignment, do_parse!(
-    tag!("🍱") >>
-    name:take!(1)   >>
-    tag!(" ")   >>
-    value:be_i8   >>
-    (Assignment { name: String::from(name), value: Expression::Value(value) })
+// named!(store(&str) -> (&str, &str, &str, i8), tuple!(
+//         tag!("🍱"),
+//         take!(1),
+//         tag!(" "),
+//         be_i8
+// ));
+named!(store, tag!("🍱"));
+named!(assignment<&str>, do_parse!(
+        map_res!(store, str::from_utf8) >>
+        name: map_res!(take_until!(" "), str::from_utf8) >>
+        (name)
 ));
 
 pub fn test() {
     let code = "🍱🐈 3";
-    let res = store(code);
+    let res = assignment(&code.as_bytes());
     println!("{:?}", res);
 }
