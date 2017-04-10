@@ -38,7 +38,9 @@ named!(store, tag!("🍱"));
 named!(assignment<&str>, do_parse!(
         map_res!(store, str::from_utf8) >>
         name: map_res!(take_until!(" "), str::from_utf8) >>
-        (name)
+        tag!(" ") >>
+        value: map_res!(tag!("3"), str::from_utf8) >>
+        (name, value)
 ));
 
 pub fn test() {
