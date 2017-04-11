@@ -1,5 +1,6 @@
 use nom::space;
 use std::str;
+use std::vec::Vec;
 
 #[derive(Debug)]
 struct Expression {
@@ -21,6 +22,7 @@ enum Operator {
 enum Element {
     Name(String),
     Value(i8),
+    Expression(Expression)
 }
 
 enum CompilerError<'a> {
@@ -65,13 +67,18 @@ named!(token<Element>, map_res!(
     take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8)),
     Element::from_utf8
 ));
+named!(tokens<Vec<Element> >, many1!(terminated!(token, opt!(space))));
 
 named!(expression<Expression>, do_parse!(
     operator: operator >>
-    element1: token >>
-    space >>
-    element2: token >>
-    (Expression { operator: operator, elements: vec![element1, element2]})
+    elements: tokens >>
+    (Expression { operator: operator, elements: elements})
+));
+
+named!(expression1<Element>, do_parse!(
+    operator: operator >>
+    element1: alt!(token | expression1) >>
+    (Element::Expression(Expression { operator: operator, elements: vec![element1]}))
 ));
 
 // named!(expression<Expression>, do_parse!(
@@ -80,7 +87,7 @@ named!(expression<Expression>, do_parse!(
 // ));
 
 pub fn test() {
-    let code = "🍱🐈 3";
+    let code = "🍱🐈 3\n";
     let res = expression(&code.as_bytes());
     println!("{:?}", res);
 }
