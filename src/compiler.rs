@@ -1,4 +1,4 @@
-use nom::be_i8;
+use nom::space;
 use std::str;
 
 #[derive(Debug)]
@@ -52,17 +52,6 @@ impl Element {
     }
 }
 
-/////////////////// TEST
-named!(store, tag!("🍱"));
-named!(assignment<(&str, &str)>, do_parse!(
-        store >>
-        name: map_res!(take_until!(" "), str::from_utf8) >>
-        tag!(" ") >>
-        value: map_res!(tag!("3"), str::from_utf8) >>
-        ((name, value))
-));
-/////////////////// END TEST
-
 named!(operator<Operator>, map_res!(alt!(
     tag!("🍱") |
     tag!("🍳") |
@@ -72,17 +61,22 @@ named!(operator<Operator>, map_res!(alt!(
     tag!("🖨️")
 ), Operator::from_utf8));
 
-named!(token<Element>, map_res!(take_until!(" "), Element::from_utf8));
+named!(token<Element>, map_res!(
+    take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8)),
+    Element::from_utf8
+));
 
-named!(expression<(Operator, Element)>, do_parse!(
+named!(expression<(Operator, Element, Element)>, do_parse!(
     operator: operator >>
-    element: token >>
-    ((operator, element))
+    element1: token >>
+    space >>
+    element2: token >>
+    ((operator, element1, element2))
 ));
 
 // named!(expression<Expression>, do_parse!(
 //     operator: operator,
-//     alt!(expresssion | token)
+//     alt!(expression | token)
 // ));
 
 pub fn test() {
