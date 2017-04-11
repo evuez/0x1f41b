@@ -66,12 +66,12 @@ named!(token<Element>, map_res!(
     Element::from_utf8
 ));
 
-named!(expression<(Operator, Element, Element)>, do_parse!(
+named!(expression<Expression>, do_parse!(
     operator: operator >>
     element1: token >>
     space >>
     element2: token >>
-    ((operator, element1, element2))
+    (Expression { operator: operator, elements: vec![element1, element2]})
 ));
 
 // named!(expression<Expression>, do_parse!(
