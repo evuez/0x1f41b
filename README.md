@@ -12,7 +12,7 @@
 
 ## Operators
 
-Note: *value* refers to an 8-bites integer.
+Note: *value* refers to a signed 8-bits integer.
 
  - `🍱`: Assign a value to a single character name,
  - `🍳`: Addition operator,
