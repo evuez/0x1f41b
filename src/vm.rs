@@ -21,11 +21,11 @@ impl Opcode {
     fn from_byte(byte: &u8) -> Option<Opcode> {
         match *byte {
             0x00 => Some(Opcode::LITERAL),
-            0x01 => Some(Opcode::ADD),
-            0x02 => Some(Opcode::SUBSTRACT),
-            0x03 => Some(Opcode::MULTIPLY),
-            0x04 => Some(Opcode::DIVIDE),
-            0x05 => Some(Opcode::PRINT),
+            0x10 => Some(Opcode::ADD),
+            0x11 => Some(Opcode::SUBSTRACT),
+            0x12 => Some(Opcode::MULTIPLY),
+            0x13 => Some(Opcode::DIVIDE),
+            0x40 => Some(Opcode::PRINT),
             _    => None
         }
     }

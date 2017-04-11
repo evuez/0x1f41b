@@ -7,7 +7,7 @@
 🍱🦄
  🔪🐈
   🏧8️⃣ 6️⃣
-✍️🦄
+🖨️🦄
 ```
 
 ## Operators
@@ -20,4 +20,4 @@ Note: *value* refers to a signed 8-bits integer.
  - `🍇`: Multiplication operator,
  - `🔪`: Division operator,
  - `🍿`: Exponential operator,
- - `✍️`: Print a value.
+ - `🖨️`: Print a value.
