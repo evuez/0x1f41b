@@ -76,20 +76,22 @@ named!(operator<Operator>, map_res!(alt!(
 ), Operator::from_utf8));
 
 named!(token<Element>, map_res!(
-    terminated!(alt!(is_not_s!(" ") | is_not_s!("\n") | is_not_s!("\r")), nom::multispace),
+    ws!(take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8))),
     Element::from_utf8
 )); // make sure we can't use an operator as a token.
 
+named!(elements<Vec<Element> >, many1!(alt!(expression | token)));
 
 named!(expression<Element>, do_parse!( // take indent level as param
+    opt!(nom::line_ending) >> // Make it non-optional
     indent: indent >>
     operator: operator >>
-    elements: many1!(alt!(expression | token)) >>
+    elements: elements >>
     (Element::Expression(Expression { indent: indent, operator: operator, elements: elements}))
 ));
 
 pub fn test() {
-    let code = "🍱🐈 3 ";
+    let code = "🍱🐈 3\n 🍇4 3";
     let res = expression(&code.as_bytes());
 
     println!("{:?}", res);
