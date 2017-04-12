@@ -1,4 +1,5 @@
-use nom::space;
+use nom;
+use nom::{multispace, space};
 use std::str;
 use std::vec::Vec;
 
@@ -64,12 +65,13 @@ named!(operator<Operator>, map_res!(alt!(
 ), Operator::from_utf8));
 
 named!(token<Element>, map_res!(
-    take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8)),
+    terminated!(alt!(is_not_s!(" ") | is_not_s!("\n") | is_not_s!("\r")), multispace),
     Element::from_utf8
-));
-named!(tokens<Vec<Element> >, many1!(terminated!(token, opt!(space))));
+)); // make sure we can't use an operator as a token.
+named!(tokens<Vec<Element> >, many0!(token));
 
 named!(expression<Expression>, do_parse!(
+    opt!(space) >>
     operator: operator >>
     elements: tokens >>
     (Expression { operator: operator, elements: elements})
@@ -77,7 +79,7 @@ named!(expression<Expression>, do_parse!(
 
 named!(expression1<Element>, do_parse!(
     operator: operator >>
-    element1: alt!(token | expression1) >>
+    element1: alt!(token | expression1) >> // many1!(elements)
     (Element::Expression(Expression { operator: operator, elements: vec![element1]}))
 ));
 
@@ -87,7 +89,7 @@ named!(expression1<Element>, do_parse!(
 // ));
 
 pub fn test() {
-    let code = "🍱🐈 3\n";
+    let code = "🍱🐈 3 ";
     let res = expression(&code.as_bytes());
     println!("{:?}", res);
 }
