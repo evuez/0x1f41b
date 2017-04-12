@@ -1,10 +1,10 @@
 use nom;
-use nom::{multispace, space};
 use std::str;
 use std::vec::Vec;
 
 #[derive(Debug)]
 struct Expression {
+    indent: u8,
     operator: Operator,
     elements: Vec<Element>
 }
@@ -28,6 +28,15 @@ enum Element {
 
 enum CompilerError<'a> {
     NotAnOperator(&'a str),
+}
+
+impl Expression {
+    fn guess_indent(indent: Option<&[u8]>) -> Result<u8, CompilerError> {
+        match indent {
+            Some(a) => Ok(a.len() as u8),
+            None    => Ok(0)
+        }
+    }
 }
 
 impl Operator {
@@ -55,6 +64,8 @@ impl Element {
     }
 }
 
+named!(indent<u8>, map_res!(opt!(nom::space), Expression::guess_indent));
+
 named!(operator<Operator>, map_res!(alt!(
     tag!("🍱") |
     tag!("🍳") |
@@ -65,31 +76,21 @@ named!(operator<Operator>, map_res!(alt!(
 ), Operator::from_utf8));
 
 named!(token<Element>, map_res!(
-    terminated!(alt!(is_not_s!(" ") | is_not_s!("\n") | is_not_s!("\r")), multispace),
+    terminated!(alt!(is_not_s!(" ") | is_not_s!("\n") | is_not_s!("\r")), nom::multispace),
     Element::from_utf8
 )); // make sure we can't use an operator as a token.
-named!(tokens<Vec<Element> >, many0!(token));
 
-named!(expression<Expression>, do_parse!(
-    opt!(space) >>
+
+named!(expression<Element>, do_parse!( // take indent level as param
+    indent: indent >>
     operator: operator >>
-    elements: tokens >>
-    (Expression { operator: operator, elements: elements})
+    elements: many1!(alt!(expression | token)) >>
+    (Element::Expression(Expression { indent: indent, operator: operator, elements: elements}))
 ));
-
-named!(expression1<Element>, do_parse!(
-    operator: operator >>
-    element1: alt!(token | expression1) >> // many1!(elements)
-    (Element::Expression(Expression { operator: operator, elements: vec![element1]}))
-));
-
-// named!(expression<Expression>, do_parse!(
-//     operator: operator,
-//     alt!(expression | token)
-// ));
 
 pub fn test() {
     let code = "🍱🐈 3 ";
     let res = expression(&code.as_bytes());
+
     println!("{:?}", res);
 }
