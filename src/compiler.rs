@@ -64,7 +64,7 @@ impl Element {
     }
 }
 
-named!(indent<u8>, map_res!(opt!(nom::space), Expression::guess_indent));
+named!(indent<u8>, map_res!(opt!(preceded!(nom::eol, nom::space)), Expression::guess_indent));
 
 named!(operator<Operator>, map_res!(alt!(
     tag!("🍱") |
@@ -75,32 +75,34 @@ named!(operator<Operator>, map_res!(alt!(
     tag!("🖨️")
 ), Operator::from_utf8));
 
-named!(token<Element>, map_res!(
-    ws!(take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8))),
-    Element::from_utf8
-)); // make sure we can't use an operator as a token.
+fn token(input: &[u8]) -> nom::IResult<&[u8], Element> {
+    map_res!(
+        input,
+        do_parse!(opt!(nom::space) >> token:take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8)) >> (token)),
+        Element::from_utf8
+    )
+}// make sure we can't use an operator as a token.
 
-fn elements(input: &[u8], parent_indent: u8) -> nom::IResult<&[u8], Vec<Element> > {
+fn elements(input: &[u8], parent_indent: u8) -> nom::IResult<&[u8], Vec<Element>> {
     many1!(input, alt!(apply!(expression, parent_indent) | token))
 }
 
 fn expression(input: &[u8], parent_indent: u8) -> nom::IResult<&[u8], Element> {
-
-    println!("Input: {:?}", str::from_utf8(input));
-    println!("Indent: {:?}", parent_indent);
-
     do_parse!(input,
-        opt!(nom::eol) >> // Make it non-optional (using recognize!)
-        indent: indent >>
+        p_indent: indent >>
         operator: operator >>
-        elements: apply!(elements, indent) >>
-        (Element::Expression(Expression { indent: indent, operator: operator, elements: elements}))
+        n_indent: indent >>// MUST BE PRECEDED BY \n, otherwise it's not an indent. Get nested indent; if >= indent keep going otherwise ERR
+        elements: apply!(elements, p_indent) >>
+        (Element::Expression(Expression { indent: p_indent, operator: operator, elements: elements}))
      )
 }
 
 pub fn test() {
-    let code = "\n🍱🐈 3\n 🍇4 3";
-    let res = expression(&code.as_bytes(), 0);
+    println!("\n\n");
 
-    println!("{:?}", res);
+    let code = &"🍱🐈 3\n 🍇4 3".as_bytes();
+    //let code = &" 🍱🐈 3\n       🍇4 3".as_bytes();
+
+    println!("{:?}", expression(code, 0));
+    //println!("{:?}", indent(code));
 }
