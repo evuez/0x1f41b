@@ -5,7 +5,7 @@ use nom::{ErrorKind, IResult, eol, space};
 const ERR_WRONG_INDENT: u32 = 0x01;
 
 #[derive(Debug)]
-struct Expression {
+pub struct Expression {
     indent: i8,
     operator: Operator,
     elements: Vec<Element>
@@ -22,7 +22,7 @@ enum Operator {
 }
 
 #[derive(Debug)]
-enum Element {
+pub enum Element {
     Name(String),
     Value(i8),
     Expression(Expression)
@@ -111,10 +111,7 @@ fn expression(input: &[u8], parent_indent: i8) -> IResult<&[u8], Element> {
 
 named!(expressions<Vec<Element> >, many1!(do_parse!(opt!(eol) >> exp: apply!(expression, -1) >> (exp))));
 
-pub fn test() {
-    println!("\n\n");
-
-    let code = &"\n🍱🐈\n 🍳3\n  🍇4\n   🍇2 3\n🍱a 3".as_bytes();
-
-    println!("{:?}", expressions(code));
+pub fn run(source: &[u8]) -> Vec<Element> {
+    let (_, r) = expressions(&source[0..source.len() - 1]).unwrap();
+    r
 }
