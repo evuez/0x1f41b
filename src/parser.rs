@@ -86,7 +86,7 @@ named!(operator<Operator>, map_res!(alt!(
     tag!("🍇") |
     tag!("🔪") |
     tag!("🖨️")
-), Operator::from_utf8));
+), Operator::from_utf8)); // make a macro "alt_tags!("1", "2", "3", "4")"
 
 fn token(input: &[u8]) -> IResult<&[u8], Element> {
     map_res!(
@@ -112,6 +112,6 @@ fn expression(input: &[u8], parent_indent: i8) -> IResult<&[u8], Element> {
 named!(expressions<Vec<Element> >, many1!(do_parse!(opt!(eol) >> exp: apply!(expression, -1) >> (exp))));
 
 pub fn run(source: &[u8]) -> Vec<Element> {
-    let (_, r) = expressions(&source[0..source.len() - 1]).unwrap();
+    let (_, r) = expressions(&source[0..source.len() - 1]).unwrap(); // do a .trim instead
     r
 }
