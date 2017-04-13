@@ -2,9 +2,11 @@ use nom;
 use std::str;
 use std::vec::Vec;
 
+const ERR_WRONG_INDENT: u32 = 0x01;
+
 #[derive(Debug)]
 struct Expression {
-    indent: u8,
+    indent: i8,
     operator: Operator,
     elements: Vec<Element>
 }
@@ -31,9 +33,9 @@ enum CompilerError<'a> {
 }
 
 impl Expression {
-    fn guess_indent(indent: Option<&[u8]>) -> Result<u8, CompilerError> {
+    fn guess_indent(indent: Option<&[u8]>) -> Result<i8, CompilerError> {
         match indent {
-            Some(a) => Ok(a.len() as u8),
+            Some(a) => Ok(a.len() as i8),
             None    => Ok(0)
         }
     }
@@ -64,7 +66,19 @@ impl Element {
     }
 }
 
-named!(indent<u8>, map_res!(opt!(preceded!(nom::eol, nom::space)), Expression::guess_indent));
+fn indent(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], i8> {
+    let indent_result = map_res!(input, opt!(preceded!(nom::eol, nom::space)), Expression::guess_indent);
+    let (_, current_indent) = indent_result.clone().unwrap();
+
+    println!("Input: {:?}", str::from_utf8(input));
+    println!("{:?} > {:?}", current_indent, parent_indent);
+
+    if current_indent > parent_indent {
+        indent_result
+    } else {
+        nom::IResult::Error(nom::ErrorKind::Custom(ERR_WRONG_INDENT))
+    }
+}
 
 named!(operator<Operator>, map_res!(alt!(
     tag!("🍱") |
@@ -83,26 +97,25 @@ fn token(input: &[u8]) -> nom::IResult<&[u8], Element> {
     )
 }// make sure we can't use an operator as a token.
 
-fn elements(input: &[u8], parent_indent: u8) -> nom::IResult<&[u8], Vec<Element>> {
+fn elements(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], Vec<Element>> {
     many1!(input, alt!(apply!(expression, parent_indent) | token))
 }
 
-fn expression(input: &[u8], parent_indent: u8) -> nom::IResult<&[u8], Element> {
+fn expression(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], Element> {
     do_parse!(input,
-        p_indent: indent >>
+        current_indent: apply!(indent, parent_indent) >>
         operator: operator >>
-        n_indent: indent >>// MUST BE PRECEDED BY \n, otherwise it's not an indent. Get nested indent; if >= indent keep going otherwise ERR
-        elements: apply!(elements, p_indent) >>
-        (Element::Expression(Expression { indent: p_indent, operator: operator, elements: elements}))
+        elements: apply!(elements, parent_indent) >>
+        (Element::Expression(Expression { indent: current_indent, operator: operator, elements: elements}))
      )
 }
 
 pub fn test() {
     println!("\n\n");
 
-    let code = &"🍱🐈 3\n 🍇4 3".as_bytes();
+    let code = &"🍱🐈 3\n 🍇4 3\n 🍇23".as_bytes();
     //let code = &" 🍱🐈 3\n       🍇4 3".as_bytes();
 
-    println!("{:?}", expression(code, 0));
+    println!("{:?}", expression(code, -1));
     //println!("{:?}", indent(code));
 }
