@@ -80,19 +80,27 @@ named!(token<Element>, map_res!(
     Element::from_utf8
 )); // make sure we can't use an operator as a token.
 
-named!(elements<Vec<Element> >, many1!(alt!(expression | token)));
+fn elements(input: &[u8], parent_indent: u8) -> nom::IResult<&[u8], Vec<Element> > {
+    many1!(input, alt!(apply!(expression, parent_indent) | token))
+}
 
-named!(expression<Element>, do_parse!( // take indent level as param
-    opt!(nom::line_ending) >> // Make it non-optional
-    indent: indent >>
-    operator: operator >>
-    elements: elements >>
-    (Element::Expression(Expression { indent: indent, operator: operator, elements: elements}))
-));
+fn expression(input: &[u8], parent_indent: u8) -> nom::IResult<&[u8], Element> {
+
+    println!("Input: {:?}", str::from_utf8(input));
+    println!("Indent: {:?}", parent_indent);
+
+    do_parse!(input,
+        opt!(nom::eol) >> // Make it non-optional (using recognize!)
+        indent: indent >>
+        operator: operator >>
+        elements: apply!(elements, indent) >>
+        (Element::Expression(Expression { indent: indent, operator: operator, elements: elements}))
+     )
+}
 
 pub fn test() {
-    let code = "🍱🐈 3\n 🍇4 3";
-    let res = expression(&code.as_bytes());
+    let code = "\n🍱🐈 3\n 🍇4 3";
+    let res = expression(&code.as_bytes(), 0);
 
     println!("{:?}", res);
 }
