@@ -70,13 +70,10 @@ fn indent(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], i8> {
     let indent_result = map_res!(input, opt!(preceded!(nom::eol, nom::space)), Expression::guess_indent);
     let (_, current_indent) = indent_result.clone().unwrap();
 
-    println!("Input: {:?}", str::from_utf8(input));
-    println!("{:?} > {:?}", current_indent, parent_indent);
-
-    if current_indent > parent_indent {
-        indent_result
-    } else {
-        nom::IResult::Error(nom::ErrorKind::Custom(ERR_WRONG_INDENT))
+    match current_indent - 1 {
+        c if c == parent_indent => indent_result,
+        c if c > parent_indent  => panic!("Indentation isn't consistent"),
+        _ => nom::IResult::Error(nom::ErrorKind::Custom(ERR_WRONG_INDENT))
     }
 }
 
@@ -113,7 +110,7 @@ fn expression(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], Element> {
 pub fn test() {
     println!("\n\n");
 
-    let code = &"🍱🐈 3\n 🍇4 3\n 🍇23".as_bytes();
+    let code = &"🍱🐈 3\n 🍇4 3\n  🍇23".as_bytes();
     //let code = &" 🍱🐈 3\n       🍇4 3".as_bytes();
 
     println!("{:?}", expression(code, -1));
