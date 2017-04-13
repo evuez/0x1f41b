@@ -35,7 +35,7 @@ enum CompilerError<'a> {
 impl Expression {
     fn guess_indent(indent: Option<&[u8]>) -> Result<i8, CompilerError> {
         match indent {
-            Some(a) => Ok(a.into_iter().filter(|&&i| i == ' ' as u8).count() as i8),
+            Some(a) => Ok(a.len() as i8),
             None    => Ok(0)
         }
     }
@@ -69,7 +69,7 @@ impl Element {
 // Parsers
 
 fn indent(input: &[u8], parent_indent: i8) -> IResult<&[u8], i8> {
-    let indent_result = map_res!(input, opt!(alt!(preceded!(eol, space) | eol)), Expression::guess_indent);
+    let indent_result = map_res!(input, opt!(preceded!(eol, space)), Expression::guess_indent);
     let (_, current_indent) = indent_result.clone().unwrap();
 
     match current_indent - 1 {
@@ -109,7 +109,7 @@ fn expression(input: &[u8], parent_indent: i8) -> IResult<&[u8], Element> {
      )
 }
 
-named!(expressions<Vec<Element> >, many1!(apply!(expression, -1)));
+named!(expressions<Vec<Element> >, many1!(do_parse!(opt!(eol) >> exp: apply!(expression, -1) >> (exp))));
 
 pub fn test() {
     println!("\n\n");
