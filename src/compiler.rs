@@ -1,6 +1,6 @@
-use nom;
 use std::str;
 use std::vec::Vec;
+use nom::{ErrorKind, IResult, eol, space};
 
 const ERR_WRONG_INDENT: u32 = 0x01;
 
@@ -35,7 +35,7 @@ enum CompilerError<'a> {
 impl Expression {
     fn guess_indent(indent: Option<&[u8]>) -> Result<i8, CompilerError> {
         match indent {
-            Some(a) => Ok(a.len() as i8),
+            Some(a) => Ok(a.into_iter().filter(|&&i| i == ' ' as u8).count() as i8),
             None    => Ok(0)
         }
     }
@@ -66,14 +66,16 @@ impl Element {
     }
 }
 
-fn indent(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], i8> {
-    let indent_result = map_res!(input, opt!(preceded!(nom::eol, nom::space)), Expression::guess_indent);
+// Parsers
+
+fn indent(input: &[u8], parent_indent: i8) -> IResult<&[u8], i8> {
+    let indent_result = map_res!(input, opt!(alt!(preceded!(eol, space) | eol)), Expression::guess_indent);
     let (_, current_indent) = indent_result.clone().unwrap();
 
     match current_indent - 1 {
         c if c == parent_indent => indent_result,
         c if c > parent_indent  => panic!("Indentation isn't consistent"),
-        _ => nom::IResult::Error(nom::ErrorKind::Custom(ERR_WRONG_INDENT))
+        _ => IResult::Error(ErrorKind::Custom(ERR_WRONG_INDENT))
     }
 }
 
@@ -86,19 +88,19 @@ named!(operator<Operator>, map_res!(alt!(
     tag!("🖨️")
 ), Operator::from_utf8));
 
-fn token(input: &[u8]) -> nom::IResult<&[u8], Element> {
+fn token(input: &[u8]) -> IResult<&[u8], Element> {
     map_res!(
         input,
-        do_parse!(opt!(nom::space) >> token:take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8)) >> (token)),
+        do_parse!(opt!(space) >> token:take_while!(call!(|c| c != '\n' as u8 && c != ' ' as u8)) >> (token)),
         Element::from_utf8
     )
-}// make sure we can't use an operator as a token.
+}
 
-fn elements(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], Vec<Element>> {
+fn elements(input: &[u8], parent_indent: i8) -> IResult<&[u8], Vec<Element>> {
     many1!(input, alt!(apply!(expression, parent_indent) | token))
 }
 
-fn expression(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], Element> {
+fn expression(input: &[u8], parent_indent: i8) -> IResult<&[u8], Element> {
     do_parse!(input,
         current_indent: apply!(indent, parent_indent) >>
         operator: operator >>
@@ -107,12 +109,12 @@ fn expression(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], Element> {
      )
 }
 
+named!(expressions<Vec<Element> >, many1!(apply!(expression, -1)));
+
 pub fn test() {
     println!("\n\n");
 
-    let code = &"🍱🐈 3\n 🍇4 3\n  🍇23".as_bytes();
-    //let code = &" 🍱🐈 3\n       🍇4 3".as_bytes();
+    let code = &"\n🍱🐈\n 🍳3\n  🍇4\n   🍇2 3\n🍱a 3".as_bytes();
 
-    println!("{:?}", expression(code, -1));
-    //println!("{:?}", indent(code));
+    println!("{:?}", expressions(code));
 }
