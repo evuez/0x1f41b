@@ -105,7 +105,7 @@ fn expression(input: &[u8], parent_indent: i8) -> nom::IResult<&[u8], Element> {
     do_parse!(input,
         current_indent: apply!(indent, parent_indent) >>
         operator: operator >>
-        elements: apply!(elements, parent_indent) >>
+        elements: apply!(elements, current_indent) >>
         (Element::Expression(Expression { indent: current_indent, operator: operator, elements: elements}))
      )
 }
