@@ -9,7 +9,6 @@ fn main() {
 
     println!("\n\n");
 
-    let source = include_bytes!("../examples/first.🐛");
+    let source = include_str!("../examples/first.🐛");
     println!("{:?}", parser::run(source));
-    //parser::test();
 }

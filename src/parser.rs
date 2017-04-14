@@ -111,7 +111,7 @@ fn expression(input: &[u8], parent_indent: i8) -> IResult<&[u8], Element> {
 
 named!(expressions<Vec<Element> >, many1!(do_parse!(opt!(eol) >> exp: apply!(expression, -1) >> (exp))));
 
-pub fn run(source: &[u8]) -> Vec<Element> {
-    let (_, r) = expressions(&source[0..source.len() - 1]).unwrap(); // do a .trim instead
+pub fn run(source: &str) -> Vec<Element> {
+    let (_, r) = expressions(&source.trim().as_bytes()).unwrap();
     r
 }
