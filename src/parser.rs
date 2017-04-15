@@ -66,6 +66,11 @@ impl Element {
     }
 }
 
+pub fn run(source: &str) -> Vec<Element> {
+    let (_, r) = expressions(&source.trim().as_bytes()).unwrap();
+    r
+}
+
 // Parsers
 
 fn indent(input: &[u8], parent_indent: i8) -> IResult<&[u8], i8> {
@@ -86,7 +91,7 @@ named!(operator<Operator>, map_res!(alt!(
     tag!("🍇") |
     tag!("🔪") |
     tag!("🖨️")
-), Operator::from_utf8)); // make a macro "alt_tags!("1", "2", "3", "4")"
+), Operator::from_utf8));
 
 fn token(input: &[u8]) -> IResult<&[u8], Element> {
     map_res!(
@@ -110,8 +115,3 @@ fn expression(input: &[u8], parent_indent: i8) -> IResult<&[u8], Element> {
 }
 
 named!(expressions<Vec<Element> >, many1!(do_parse!(opt!(eol) >> exp: apply!(expression, -1) >> (exp))));
-
-pub fn run(source: &str) -> Vec<Element> {
-    let (_, r) = expressions(&source.trim().as_bytes()).unwrap();
-    r
-}
