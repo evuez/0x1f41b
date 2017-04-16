@@ -48,14 +48,10 @@ impl VM {
         };
 
         while vm.index < bytecode.len() {
-            println!("Stack 1...10: {:?}", &vm.stack[0..9]); // Debug
-
             let opcode = vm.read();
             vm.execute(opcode);
             vm.next();
         }
-
-        println!("Stack 1...10: {:?}", &vm.stack[0..9]) // Debug
     }
 
     fn execute(&mut self, opcode: Opcode) {
