@@ -12,7 +12,7 @@ pub struct Expression {
 }
 
 #[derive(Debug)]
-enum Operator {
+pub enum Operator {
     Store,
     Add,
     Substract,
