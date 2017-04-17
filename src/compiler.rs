@@ -2,11 +2,19 @@ use std::vec::Vec;
 use parser::{Element, Expression, Operator};
 
 pub fn test(elements: Vec<Element>) {
-    let r = filter(&elements, &|e| { match e {
+    let r0 = filter(&elements, &|e| { match e {
         &Element::Expression(Expression {operator: Operator::Store, ..}) => true,
         _ => false
     } });
-    println!("{:?}", r);
+    let r1 = filter_and_extract(&elements, &|e| { match e {
+        &Element::Expression(Expression {operator: Operator::Store, ..}) => true,
+        _ => false
+    } }, &|e| { match e {
+        &Element::Expression(Expression {elements: elements, ..}) => Element::Value(1),
+        _ => Element::Value(1)
+    } });
+
+    println!("{:?}", r0);
 }
 
 fn substitute(elements: Vec<Element>) {
@@ -32,6 +40,7 @@ fn filter<'a, F>(elements: &'a Vec<Element>, matcher: &F) -> Vec<&'a Element> wh
     elements.iter().filter(|e| matcher(e)).collect::<Vec<&Element>>()
 }
 
-fn filter_and_extract<'a, F, G, U>(elements: &'a Vec<Element>, matcher: &F, extractor: &G<U>) -> Vec<&'a Element>
-        where F: Fn(&Element) -> bool, G: Fn(&Element) -> U {
+fn filter_and_extract<'a, F, G>(elements: &'a Vec<Element>, matcher: &F, extractor: &G) -> Vec<Element>
+        where F: Fn(&Element) -> bool, G: Fn(&Element) -> Element {
+    elements.iter().filter(|e| matcher(e)).map(|e| extractor(e)).collect::<Vec<Element>>()
 }
