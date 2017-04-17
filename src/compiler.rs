@@ -29,10 +29,9 @@ fn substitute(elements: Vec<Element>) {
 
 
 fn filter<'a, F>(elements: &'a Vec<Element>, matcher: &F) -> Vec<&'a Element> where F: Fn(&Element) -> bool {
-    //(1..101).filter(|&v| matcher(v as i32)).collect::<Vec<i32>>()
-    elements
-        .iter()
-        .filter(|e| matcher(e))
-        .collect::<Vec<&Element>>()
+    elements.iter().filter(|e| matcher(e)).collect::<Vec<&Element>>()
 }
 
+fn filter_and_extract<'a, F, G, U>(elements: &'a Vec<Element>, matcher: &F, extractor: &G<U>) -> Vec<&'a Element>
+        where F: Fn(&Element) -> bool, G: Fn(&Element) -> U {
+}
