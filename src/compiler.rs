@@ -3,7 +3,7 @@ use parser::{Element, Expression, Operator};
 
 pub fn test(elements: Vec<Element>) {
     let r = filter(&elements, &|e| { match e {
-        &Element::Expression(_) => true,
+        &Element::Expression(Expression {operator: Operator::Store, ..}) => true,
         _ => false
     } });
     println!("{:?}", r);
