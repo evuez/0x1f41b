@@ -8,7 +8,7 @@ const ERR_WRONG_INDENT: u32 = 0x01;
 pub struct Expression {
     indent: i8,
     pub operator: Operator,
-    elements: Vec<Element>
+    pub elements: Vec<Element>
 }
 
 #[derive(Debug)]
